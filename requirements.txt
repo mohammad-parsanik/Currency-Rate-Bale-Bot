@@ -1,0 +1,8 @@
+aiohttp
+aiosqlite
+fastapi
+uvicorn
+jinja2
+pydantic-settings
+python-dotenv
+apscheduler

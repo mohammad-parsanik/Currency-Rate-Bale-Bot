@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل مدیریت ربات ارز و طلا</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: Tahoma, Arial, sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+<div class="container mx-auto p-4">
+    <header class="flex justify-between items-center bg-white shadow rounded-lg p-6 mb-6">
+        <h1 class="text-2xl font-bold text-indigo-600">پنل مدیریت ربات</h1>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-500">آخرین استعلام: <span class="font-mono bg-gray-200 px-2 py-1 rounded" dir="ltr">{{ latest_update }}</span></span>
+            <button onclick="scrapeNow()" id="scrapeBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm transition font-bold">بروزرسانی دستی</button>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-sm font-semibold text-gray-500 mb-2">تعداد کل کاربران</h2>
+            <p class="text-3xl font-bold">{{ total_users }}</p>
+        </div>
+        <!-- Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-sm font-semibold text-gray-500 mb-2">کاربران فعال (۲۴ ساعت گذشته)</h2>
+            <p class="text-3xl font-bold">{{ active_users }}</p>
+        </div>
+        <!-- Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-sm font-semibold text-gray-500 mb-2">پرتکرارترین دستور</h2>
+            <p class="text-2xl font-bold text-blue-600" dir="ltr">{{ most_used_command }}</p>
+            <p class="text-xs text-gray-400 mt-1">{{ most_used_count }} بار استفاده شده</p>
+        </div>
+        <!-- Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-sm font-semibold text-gray-500 mb-2">وضعیت قیمت‌ها</h2>
+            <p class="text-sm">TGJU: <strong>{{ tgju_count }}</strong> مورد</p>
+            <p class="text-sm">Nerkh.io: <strong>{{ nerkh_count }}</strong> مورد</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Users Table -->
+        <div class="bg-white rounded-lg shadow p-6 overflow-hidden">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2">کاربران اخیر</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-right">
+                    <thead class="text-xs text-gray-700 bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2">آیدی بله</th>
+                            <th class="px-4 py-2">نام</th>
+                            <th class="px-4 py-2">یوزرنیم</th>
+                            <th class="px-4 py-2">آخرین فعالیت</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in recent_users %}
+                        <tr class="border-b">
+                            <td class="px-4 py-2 font-mono text-xs">{{ user.user_id }}</td>
+                            <td class="px-4 py-2">{{ user.first_name }} {{ user.last_name or '' }}</td>
+                            <td class="px-4 py-2" dir="ltr">@{{ user.username if user.username else '-' }}</td>
+                            <td class="px-4 py-2 text-xs text-gray-500" dir="ltr">{{ user.last_seen_at }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center py-4 text-gray-500">کاربری یافت نشد</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Errors Table -->
+        <div class="bg-white rounded-lg shadow p-6 overflow-hidden">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2 text-red-600">خطاهای اخیر سرویس قیمت</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-right">
+                    <thead class="text-xs text-gray-700 bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2">منبع</th>
+                            <th class="px-4 py-2">نوع خطا</th>
+                            <th class="px-4 py-2">زمان</th>
+                            <th class="px-4 py-2">متن خطا</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for err in recent_errors %}
+                        <tr class="border-b">
+                            <td class="px-4 py-2 font-bold">{{ err.source }}</td>
+                            <td class="px-4 py-2">{{ err.error_type }}</td>
+                            <td class="px-4 py-2 text-xs text-gray-500" dir="ltr">{{ err.created_at }}</td>
+                            <td class="px-4 py-2 text-xs truncate max-w-xs" title="{{ err.error_message }}">{{ err.error_message }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center py-4 text-green-600">خطایی ثبت نشده است 🎉</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Source Change Logs -->
+        <div class="bg-white rounded-lg shadow p-6 overflow-hidden col-span-1 lg:col-span-2">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2 text-indigo-600">تغییرات اخیر منبع توسط کاربران</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-right">
+                    <thead class="text-xs text-gray-700 bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2">کاربر</th>
+                            <th class="px-4 py-2">یوزرنیم</th>
+                            <th class="px-4 py-2">از منبع</th>
+                            <th class="px-4 py-2">به منبع</th>
+                            <th class="px-4 py-2">زمان تغییر</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in source_logs %}
+                        <tr class="border-b">
+                            <td class="px-4 py-2">{{ log.first_name }}</td>
+                            <td class="px-4 py-2" dir="ltr">@{{ log.username if log.username else '-' }}</td>
+                            <td class="px-4 py-2 text-gray-500">{{ log.old_source }}</td>
+                            <td class="px-4 py-2 font-bold text-green-600">{{ log.new_source }}</td>
+                            <td class="px-4 py-2 text-xs text-gray-500" dir="ltr">{{ log.changed_at }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center py-4 text-gray-500">تغییری ثبت نشده است</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Refresh page every 60 seconds
+    setTimeout(() => { window.location.reload(); }, 60000);
+
+    async function scrapeNow() {
+        const btn = document.getElementById('scrapeBtn');
+        btn.disabled = true;
+        btn.innerText = 'در حال استعلام...';
+        btn.classList.add('opacity-50');
+
+        try {
+            const res = await fetch('/api/scrape', { method: 'POST' });
+            if (res.ok) {
+                alert('استعلام با موفقیت انجام شد!');
+                window.location.reload();
+            } else {
+                alert('خطا در انجام استعلام.');
+                btn.disabled = false;
+                btn.innerText = 'بروزرسانی دستی';
+                btn.classList.remove('opacity-50');
+            }
+        } catch (e) {
+            alert('خطای شبکه.');
+            btn.disabled = false;
+            btn.innerText = 'بروزرسانی دستی';
+            btn.classList.remove('opacity-50');
+        }
+    }
+</script>
+</body>
+</html>
