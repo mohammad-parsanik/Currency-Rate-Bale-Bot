@@ -67,7 +67,7 @@ graph TD
     end
 
     subgraph "SQLite Database (aiosqlite)"
-        DB[(prices | users | interactions | fetch_errors | user_source_logs)]
+        DB[("prices | users | interactions | fetch_errors | user_source_logs")]
     end
 
     Scheduler -->|Upserts Prices| DB
@@ -325,7 +325,7 @@ BOT_TOKEN=your_bale_bot_token_here
 NERKH_API_TOKEN=your_nerkh_io_token_here   # Optional — leave empty to use TGJU only
 ```
 
-> ⚠️ **Never commit your real `.env` file.** It is already in `.gitignore`.
+> ⚠️ **Obviously you should Never commit your real `.env` file.** It is already in `.gitignore`.
 
 ---
 
