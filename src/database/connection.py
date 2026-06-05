@@ -5,9 +5,22 @@ from src.config import settings
 logger = logging.getLogger(__name__)
 
 from contextlib import asynccontextmanager
+import os
 
 @asynccontextmanager
 async def get_db_connection():
+    db_dir = os.path.dirname(settings.DB_PATH)
+    if db_dir:
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+        except PermissionError:
+            logger.error(f"Permission denied: cannot create directory {db_dir}. If you are using Kubernetes, ensure your volume has the correct permissions (e.g., using securityContext fsGroup).")
+            raise
+        
+        if not os.access(db_dir, os.W_OK):
+            logger.error(f"Permission denied: directory {db_dir} is not writable. If using Kubernetes volumes, the mounted volume might be owned by root. Consider using an initContainer to change ownership or set securityContext.fsGroup.")
+            raise PermissionError(f"Directory {db_dir} is not writable")
+
     async with aiosqlite.connect(settings.DB_PATH) as db:
         await db.execute("PRAGMA journal_mode=WAL")
         db.row_factory = aiosqlite.Row

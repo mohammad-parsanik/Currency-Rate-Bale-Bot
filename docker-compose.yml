@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   bot:
-    build: .
-    container_name: currency_bale_bot
+    image: currencyratebalebot:0.1.0
+    container_name: currency_rate_bale_bot
     restart: unless-stopped
     env_file: .env
     volumes:

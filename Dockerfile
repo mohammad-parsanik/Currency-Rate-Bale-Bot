@@ -3,8 +3,8 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Set environment variables to prevent python from writing pyc files and buffering stdout
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Install required system packages
 RUN apt-get update \
